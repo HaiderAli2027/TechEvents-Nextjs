@@ -49,3 +49,6 @@ An _interface_ is used to define the structure (shape) of an object.
 ShortCut-Key:
 go to defination of component.
 ctrl + right CLick -> go to defination.
+
+git checkout -b implement-posthog:
+-This command creates a new branch called implement-posthog and -immediately switches to it — all in one step.
