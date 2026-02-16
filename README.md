@@ -36,3 +36,16 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 npx create-next-app@latest
+
+notes:
+
+When ever some section will have to repeat in multiple pages place it in the layout.tsx
+for example the NavBar.
+
+Create the _components_ of every single section that you can keep separate.
+
+An _interface_ is used to define the structure (shape) of an object.
+
+ShortCut-Key:
+go to defination of component.
+ctrl + right CLick -> go to defination.
