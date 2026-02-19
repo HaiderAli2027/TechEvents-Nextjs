@@ -116,12 +116,16 @@ eventSchema.pre<IEvent>('save', async function (next) {
   // Only regenerate slug if title is modified
   if (this.isModified('title')) {
     // Generate URL-friendly slug from title
-    this.slug = this.title
+    let baseSlug = this.title
       .toLowerCase()
       .trim()
       .replace(/[^\w\s-]/g, '') // Remove special characters
       .replace(/\s+/g, '-') // Replace spaces with hyphens
       .replace(/-+/g, '-'); // Replace multiple hyphens with single hyphen
+
+    // Append a unique suffix to avoid collisions
+    const existing = await mongoose.models.Event.findOne({ slug: baseSlug, _id: { $ne: this._id } });
+    this.slug = existing ? `${baseSlug}-${this._id}` : baseSlug;
   }
 
   // Normalize date to ISO format (YYYY-MM-DD)
