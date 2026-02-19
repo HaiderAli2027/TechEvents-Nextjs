@@ -52,3 +52,12 @@ ctrl + right CLick -> go to defination.
 
 git checkout -b implement-posthog:
 -This command creates a new branch called implement-posthog and -immediately switches to it — all in one step.
+
+- git add .
+- git commit -m "Implemented PostHog"
+- git push -u origin implement-posthog
+
+-- git checkout main
+-- git pull
+
+git checkout -b database-models
