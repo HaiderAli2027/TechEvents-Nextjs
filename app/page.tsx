@@ -1,9 +1,15 @@
 import Explorebtn from '@/components/Explorebtn'
 import EventCard from '@/components/EventCard'
 import { events } from '@/lib/constants'
+import { IEvent } from '@/database';
 
+const BaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
-const page = () => {
+const page = async () => {
+  
+  const response = await fetch(`${BaseUrl}/api/events`);
+  const { events} = await response.json();
+  
   return (
     <div>
       <section>
@@ -15,7 +21,7 @@ const page = () => {
         <div className='mt-20 space-y-7'>
           <h3>Featured Events</h3>   
           <ul className='events'>
-            {events.map((event) => (
+            {events && events.length > 0 &&events.map((event: IEvent) => (
               <li key={event.title}>
                 
                 {/* rest operator used */}
