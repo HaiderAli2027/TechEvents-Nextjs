@@ -64,10 +64,16 @@ export async function POST(req: NextRequest){
     }
 }
 
-export async function GET(){
-    try{
+export async function GET() {
+    try {
         await connectDB();
-        const events = await Event.find().sort({ createdAt: -1 }).lean();
+        
+        const events = await Event.find()
+            .select("title slug image date time location mode description overview tags")
+            .sort({ createdAt: -1 })
+            .limit(50)
+            .lean()
+            .exec();
 
         // Convert _id and date fields to string for serialization
         const plainEvents = events.map(event => ({
@@ -77,12 +83,27 @@ export async function GET(){
             updatedAt: event.updatedAt?.toString?.() ?? event.updatedAt,
         }));
 
-        return NextResponse.json({
-            message: "Events fetched successfully",
-            events: plainEvents
-        }, { status: 200 });
-    }
-    catch(e){
-        return NextResponse.json({ message: "Event Fetch Failed", error: e instanceof Error ? e.message : "Unknown error"}, { status: 500 });
+        return NextResponse.json(
+            {
+                message: "Events fetched successfully",
+                events: plainEvents,
+                count: plainEvents.length,
+            },
+            { 
+                status: 200,
+                headers: {
+                    "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+                },
+            }
+        );
+    } catch (e) {
+        console.error("[API] Events fetch error:", e);
+        return NextResponse.json(
+            { 
+                message: "Event Fetch Failed", 
+                error: e instanceof Error ? e.message : "Unknown error" 
+            },
+            { status: 500 }
+        );
     }
 }

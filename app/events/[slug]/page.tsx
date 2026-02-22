@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import BookEvent from "@/components/BookEvent";
-import { IEvent } from "@/database";
+import { IEvent, Event } from "@/database";
 import { getSimilarEventsBySlug } from "@/lib/actions/event.actions";
 import EventCard from "@/components/EventCard";
+import { Suspense } from "react";
+import connectDB from "@/lib/mongodb";
 
 const BaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -69,25 +71,56 @@ const EventTags = ({tags}: {tags: string[] | string}) => {
         </div>
     );
 }
-const EventDetailsPage = async ({params}: {params: Promise<{ slug: string }>}) => {
-    const { slug } = await params;
-    
+
+// Loading fallback component
+const EventLoadingFallback = () => (
+    <section id="event" className="animate-pulse">
+        <div className="header">
+            <div className="h-8 bg-gray-700 rounded w-1/2"></div>
+            <div className="h-4 bg-gray-700 rounded w-2/3 mt-4"></div>
+        </div>
+        <div className="details">
+            <div className="content">
+                <div className="h-96 bg-gray-700 rounded"></div>
+            </div>
+        </div>
+    </section>
+);
+
+// Async component for event details
+async function EventDetailsContent({ slug }: { slug: string }) {
     try {
-        const response = await fetch(`${BaseUrl}/api/events/${slug}`, {
-            cache: "no-store"
-        });
+        // Connect to database directly instead of through API
+        await connectDB();
         
-        if (!response.ok) {
+        // Fetch event with optimized query
+        const event = await Event.findOne({ slug })
+            .select('title description image overview date time location mode audience agenda organizer tags')
+            .lean()
+            .exec();
+        
+        if (!event) {
             return notFound();
         }
         
-        const {data: {description, image, overview, date, time, location, mode, agenda, audience, tags, organizer}} = await response.json();
+        // Find similar events in parallel
+        const [similarEvents] = await Promise.all([
+            getSimilarEventsBySlug(slug),
+        ]);
+        
+        // Convert Mongoose objects to plain objects with stringified IDs
+        const eventData = {
+            ...event,
+            _id: event._id?.toString?.() ?? event._id,
+            createdAt: event.createdAt?.toString?.() ?? event.createdAt,
+            updatedAt: event.updatedAt?.toString?.() ?? event.updatedAt,
+        };
+        
+        const { _id, description, image, overview, date, time, location, mode, agenda, audience, tags, organizer } = eventData;
 
-        if(!description) return notFound();
+        if (!description || !_id) return notFound();
 
         const bookings = 10;
-
-        const similarEvents: IEvent[] = await getSimilarEventsBySlug(slug);
 
         return (
             <section id="event">
@@ -103,18 +136,14 @@ const EventDetailsPage = async ({params}: {params: Promise<{ slug: string }>}) =
                         <section className="flex-col-gap-2">
                             <h2>Overview</h2>
                             <p>{overview}</p>
-
                         </section>
                         <section className="flex-col-gap-2">
-                            
                             <h2>Event Details</h2>
                             <EventDetailItem icon="/icons/calendar.svg" alt="calendar" label={date} />
                             <EventDetailItem icon="/icons/clock.svg" alt="clock" label={time} />
                             <EventDetailItem icon="/icons/pin.svg" alt="pin" label={location} />
                             <EventDetailItem icon="/icons/mode.svg" alt="mode" label={mode} />
                             <EventDetailItem icon="/icons/audience.svg" alt="audience" label={audience} />
-
-                            
                         </section>
 
                         <EventAgenda agendaItems={Array.isArray(agenda) ? agenda : []}/>
@@ -139,7 +168,7 @@ const EventDetailsPage = async ({params}: {params: Promise<{ slug: string }>}) =
                                 Be the first to book for this event and secure your spot!
                             </p>
                         )}
-                        <BookEvent />
+                        <BookEvent eventId={_id} slug={slug} />
                        </div>
                     </aside>
                 </div>
@@ -162,11 +191,24 @@ const EventDetailsPage = async ({params}: {params: Promise<{ slug: string }>}) =
                     )}
                 </div>
             </section>
-        )
+        );
     } catch (error) {
         console.error("Error fetching event:", error);
         return notFound();
     }
 }
 
-export default EventDetailsPage
+// Main page component
+export default function EventDetailsPage({params}: {params: Promise<{ slug: string }>}) {
+    return (
+        <Suspense fallback={<EventLoadingFallback />}>
+            <EventDetailsContentWrapper params={params} />
+        </Suspense>
+    );
+}
+
+// Wrapper to unwrap params inside Suspense
+async function EventDetailsContentWrapper({params}: {params: Promise<{ slug: string }>}) {
+    const { slug } = await params;
+    return <EventDetailsContent slug={slug} />;
+}

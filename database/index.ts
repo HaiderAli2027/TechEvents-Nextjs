@@ -3,5 +3,9 @@
  * Exports all Mongoose models and interfaces for use throughout the application
  */
 
-export { Event, type IEvent } from './event.model';
-export { Booking, type IBooking } from './booking.model';
+import Event from './event.model';
+import Booking from './booking.model';
+
+export { Event, Booking };
+export type { IEvent } from './event.model';
+export type { IBooking } from './booking.model';

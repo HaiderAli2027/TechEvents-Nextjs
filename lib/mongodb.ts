@@ -43,10 +43,13 @@ async function connectDB(): Promise<typeof mongoose> {
     }
     const options = {
       bufferCommands: false, // Disable Mongoose buffering
+      maxPoolSize: 10, // Better connection pooling
+      socketTimeoutMS: 45000,
     };
 
     // Create a new connection promise
     cached.promise = mongoose.connect(MONGODB_URI!, options).then((mongoose) => {
+      console.log("[MongoDB] Connected successfully");
       return mongoose;
     });
   }
