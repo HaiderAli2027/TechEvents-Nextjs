@@ -28,7 +28,7 @@ const EventCard = ({title, image, slug, location, date, time}: Props) => {
     <Link href={`/events/${slug}`} id="event-card" onClick={handleClick}>
         <Image src={image} alt={title} width={410} height={300} className="poster" />
         <div className="flex flex-row gap-2">
-          <Image src="icons/pin.svg" alt="location" width={14} height={14}></Image>
+          <Image src="/icons/pin.svg" alt="location" width={14} height={14}></Image>
           <p>{location}</p>
         </div>
 
@@ -36,11 +36,11 @@ const EventCard = ({title, image, slug, location, date, time}: Props) => {
 
         <div className="datetime">
           <div>
-            <Image src="icons/calendar.svg" alt="date" width={14} height={14}></Image>
+            <Image src="/icons/calendar.svg" alt="date" width={14} height={14}></Image>
             <p>{date}</p>
           </div>
           <div>
-            <Image src="icons/clock.svg" alt="time" width={14} height={14}></Image>
+            <Image src="/icons/clock.svg" alt="time" width={14} height={14}></Image>
             <p>{time}</p>
           </div>
         </div>

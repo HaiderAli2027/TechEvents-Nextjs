@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import BookEvent from "@/components/BookEvent";
+import { IEvent } from "@/database";
+import { getSimilarEventsBySlug } from "@/lib/actions/event.actions";
+import EventCard from "@/components/EventCard";
 
 const BaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -11,14 +14,28 @@ const EventDetailItem = ({ icon, alt, label }: { icon: string; alt: string; labe
     </div>
 )
 const EventAgenda = ({agendaItems}: {agendaItems: string[] | string}) => {
-    // Handle both array and stringified array
-    const items = typeof agendaItems === 'string' ? JSON.parse(agendaItems) : agendaItems;
+    // Handle multiple formats: array, stringified array, or single string
+    let items: string[] = [];
+    
+    if (typeof agendaItems === 'string') {
+        try {
+            // Try parsing as JSON array
+            const parsed = JSON.parse(agendaItems);
+            items = Array.isArray(parsed) ? parsed : [agendaItems];
+        } catch {
+            // If parse fails, treat as single string item
+            items = [agendaItems];
+        }
+    } else if (Array.isArray(agendaItems)) {
+        // If it's already an array, use it directly
+        items = agendaItems;
+    }
     
     return (
         <div className="agenda">
             <h2>Event Agenda</h2>
             <ul>
-                {Array.isArray(items) && items.map((item: string, index: number) =>(
+                {items.length > 0 && items.map((item: string, index: number) =>(
                     <li key={index}>{item}</li>
                 ))}
             </ul>
@@ -27,13 +44,27 @@ const EventAgenda = ({agendaItems}: {agendaItems: string[] | string}) => {
 }
 
 const EventTags = ({tags}: {tags: string[] | string}) => {
-    // Handle both array and stringified array
-    const tagList = typeof tags === 'string' ? JSON.parse(tags) : tags;
+    // Handle multiple formats: array, stringified array, or single string
+    let tagList: string[] = [];
+    
+    if (typeof tags === 'string') {
+        try {
+            // Try parsing as JSON array
+            const parsed = JSON.parse(tags);
+            tagList = Array.isArray(parsed) ? parsed : [tags];
+        } catch {
+            // If parse fails, treat as single string tag
+            tagList = [tags];
+        }
+    } else if (Array.isArray(tags)) {
+        // If it's already an array, use it directly
+        tagList = tags;
+    }
     
     return (
         <div className="flex flex-row gap-1.5 flex-wrap">
-            {Array.isArray(tagList) && tagList.map((tag: string) => (
-                <div className="pill" key={tag}>{tag}</div>
+            {tagList.length > 0 && tagList.map((tag: string, idx: number) => (
+                <div className="pill" key={idx}>{tag}</div>
             ))}
         </div>
     );
@@ -55,6 +86,8 @@ const EventDetailsPage = async ({params}: {params: Promise<{ slug: string }>}) =
         if(!description) return notFound();
 
         const bookings = 10;
+
+        const similarEvents: IEvent[] = await getSimilarEventsBySlug(slug);
 
         return (
             <section id="event">
@@ -109,6 +142,24 @@ const EventDetailsPage = async ({params}: {params: Promise<{ slug: string }>}) =
                         <BookEvent />
                        </div>
                     </aside>
+                </div>
+
+                <div className="flex w-full flex-col gap-4 pt-20">
+                    <h2>Similar Events</h2>
+                    {similarEvents && similarEvents.length > 0 ? (
+                        <div className="events">
+                            {similarEvents.map((event: IEvent) => (
+                                <EventCard 
+                                    key={event._id?.toString?.()} 
+                                    {...event} 
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 text-light-100">
+                            <p>No similar events found. Check out our other events!</p>
+                        </div>
+                    )}
                 </div>
             </section>
         )

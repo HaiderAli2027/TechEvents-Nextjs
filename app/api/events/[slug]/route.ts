@@ -51,10 +51,18 @@ export async function GET(
       );
     }
 
+    // Convert _id and date fields to string for serialization
+    const plainEvent = {
+      ...event,
+      _id: event._id?.toString?.() ?? event._id,
+      createdAt: event.createdAt?.toString?.() ?? event.createdAt,
+      updatedAt: event.updatedAt?.toString?.() ?? event.updatedAt,
+    };
+
     return NextResponse.json(
       {
         message: "Event retrieved successfully",
-        data: event,
+        data: plainEvent,
       },
       { status: 200 }
     );
