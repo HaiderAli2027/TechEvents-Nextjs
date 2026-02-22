@@ -2,6 +2,8 @@ import Explorebtn from '@/components/Explorebtn'
 import EventCard from '@/components/EventCard'
 import { IEvent } from '@/database';
 import { Suspense } from 'react';
+import connectDB from '@/lib/mongodb';
+import Event from '@/database/event.model';
 
 // Loading skeleton for events
 const EventsLoadingSkeleton = () => (
@@ -12,23 +14,32 @@ const EventsLoadingSkeleton = () => (
   </div>
 );
 
-// Fetch events component
+// Fetch events directly from database (server-side)
 async function FeaturedEvents() {
   try {
-    const response = await fetch(`/api/events`, {
-      cache: 'force-cache', // Enable aggressive caching
-      next: { revalidate: 3600 } // Revalidate every 1 hour
-    });
+    // Connect to MongoDB directly
+    await connectDB();
     
-    if (!response.ok) throw new Error('Failed to fetch events');
+    // Fetch events from database
+    const events = await Event.find()
+      .select('title slug image date time location mode description overview tags')
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean()
+      .exec();
     
-    const data = await response.json();
-    const events = data.events || [];
+    // Convert ObjectIds to strings for serialization
+    const plainEvents = events.map((event: any) => ({
+      ...event,
+      _id: event._id?.toString?.() ?? event._id,
+      createdAt: event.createdAt?.toString?.() ?? event.createdAt,
+      updatedAt: event.updatedAt?.toString?.() ?? event.updatedAt,
+    }));
 
     return (
       <ul className='events'>
-        {events && events.length > 0 ? (
-          events.map((event: IEvent) => (
+        {plainEvents && plainEvents.length > 0 ? (
+          plainEvents.map((event: IEvent) => (
             <li key={event._id || event.title}>
               <EventCard {...event} />
             </li>
