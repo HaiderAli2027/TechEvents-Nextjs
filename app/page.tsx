@@ -3,8 +3,6 @@ import EventCard from '@/components/EventCard'
 import { IEvent } from '@/database';
 import { Suspense } from 'react';
 
-const BaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-
 // Loading skeleton for events
 const EventsLoadingSkeleton = () => (
   <div className='space-y-4'>
@@ -17,7 +15,7 @@ const EventsLoadingSkeleton = () => (
 // Fetch events component
 async function FeaturedEvents() {
   try {
-    const response = await fetch(`${BaseUrl}/api/events`, {
+    const response = await fetch(`/api/events`, {
       cache: 'force-cache', // Enable aggressive caching
       next: { revalidate: 3600 } // Revalidate every 1 hour
     });
